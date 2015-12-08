@@ -3,6 +3,8 @@ package main
 import scala.util.Try
 import play.api.libs.json._
 
+import scalaz._; import Scalaz._
+
 object logic {
 
   case class Order(prices: Seq[Float], quantities: Seq[Int], country: String, reduction: String)
@@ -34,14 +36,16 @@ object logic {
     Some(total).filter(_ => order.prices.length == order.quantities.length)
   }
 
-  def applyTaxes(totalPrice: Float, country: String): Option[Float] = {
+  sealed trait Taxed
+  def applyTaxes(totalPrice: Float, country: String): Option[Float @@ Taxed] = {
     ratesByCountry.get(country) map { rate =>
-      totalPrice * (1 + rate)
+      Tag[Float,Taxed](totalPrice * (1 + rate))
     }
   }
-  def applyDiscount(withTaxes: Float, reduction: String): Option[Float] = {
-    getDiscountRate(reduction, withTaxes) map { rate =>
-      withTaxes * (1 - rate)
+  def applyDiscount(withTaxes: Float @@ Taxed, reduction: String): Option[Float] = {
+    val price = Tag.unwrap(withTaxes)
+    getDiscountRate(reduction, price) map { rate =>
+      price * (1 - rate)
     }
   }
 

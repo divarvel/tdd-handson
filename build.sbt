@@ -18,4 +18,4 @@ libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.3.9"
 
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.4.0-M2"
 
-
+libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.0"
