@@ -20,5 +20,15 @@ object logic {
     answer getOrElse "{}"
   }
 
-  def processOrder(order: Order): Option[Answer] = ???
+  def processOrder(order: Order): Option[Answer] = {
+    for {
+      totalPrice <- getTotalPrice(order)
+      withTaxes <- applyTaxes(totalPrice, order.country)
+      withDiscount <- applyDiscount(withTaxes, order.reduction)
+    } yield Answer(withDiscount)
+  }
+
+  def getTotalPrice(order: Order): Option[Float] = ???
+  def applyTaxes(totalPrice: Float, country: String): Option[Float] = ???
+  def applyDiscount(withTaxes: Float, reduction: String): Option[Float] = ???
 }
