@@ -40,14 +40,24 @@ object logic {
     }
   }
   def applyDiscount(withTaxes: Float, reduction: String): Option[Float] = {
-    getDiscountRate(reduction) map { rate =>
+    getDiscountRate(reduction, withTaxes) map { rate =>
       withTaxes * (1 - rate)
     }
   }
 
+  def getDiscountRate(discount: String, price: Float): Option[Float] = discount match {
+    case "STANDARD" => Some(getStandardDiscount(price))
+    case _          => None
+  }
 
-
-  def getDiscountRate(discount: String): Option[Float] = ???
+  def getStandardDiscount(price: Float): Float = price match {
+    case p if p >= 50000 => 0.15f
+    case p if p >= 10000 => 0.10f
+    case p if p >= 7000  => 0.07f
+    case p if p >= 5000  => 0.05f
+    case p if p >= 1000  => 0.03f
+    case _               => 0f
+  }
 
   val ratesByCountry = Map(
     "DE" -> 0.20f,
