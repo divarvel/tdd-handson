@@ -10,5 +10,15 @@ object logic {
   implicit val answerFormat = Json.format[Answer]
 
 
-  def processRequest(body: String): String = ???
+  def processRequest(body: String): String = {
+    val answer = for {
+      jsonBody <- Try(Json.parse(body)).toOption
+      order    <- Json.fromJson[Order](jsonBody).asOpt
+      answer   <- processOrder(order)
+    } yield Json.toJson(answer).toString
+
+    answer getOrElse "{}"
+  }
+
+  def processOrder(order: Order): Option[Answer] = ???
 }
