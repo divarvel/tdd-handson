@@ -6,8 +6,18 @@ import play.api.libs.json._
 import scalaz._; import Scalaz._
 
 object logic {
+  sealed trait DiscountType
+  case object STANDARD extends DiscountType
 
-  case class Order(prices: Seq[Float], quantities: Seq[Int], country: String, reduction: String)
+  implicit val discountTypeFormat: Format[DiscountType] = new Format[DiscountType] {
+    def writes(dt: DiscountType) = JsString(dt.toString)
+    def reads(js: JsValue) = js match {
+      case JsString("STANDARD") => JsSuccess(STANDARD)
+      case _                    => JsError("expected one of STANDARD")
+    }
+  }
+
+  case class Order(prices: Seq[Float], quantities: Seq[Int], country: String, reduction: DiscountType)
   implicit val orderFormat = Json.format[Order]
   case class Answer(total: Float)
   implicit val answerFormat = Json.format[Answer]
@@ -26,8 +36,9 @@ object logic {
     for {
       totalPrice <- getTotalPrice(order)
       withTaxes <- applyTaxes(totalPrice, order.country)
-      withDiscount <- applyDiscount(withTaxes, order.reduction)
-    } yield Answer(withDiscount)
+    } yield {
+      Answer(total = applyDiscount(withTaxes, order.reduction))
+    }
   }
 
   def getTotalPrice(order: Order): Option[Float] = {
@@ -42,16 +53,14 @@ object logic {
       Tag[Float,Taxed](totalPrice * (1 + rate))
     }
   }
-  def applyDiscount(withTaxes: Float @@ Taxed, reduction: String): Option[Float] = {
+  def applyDiscount(withTaxes: Float @@ Taxed, reduction: DiscountType): Float = {
     val price = Tag.unwrap(withTaxes)
-    getDiscountRate(reduction, price) map { rate =>
-      price * (1 - rate)
-    }
+    val rate = getDiscountRate(reduction, price) 
+    price * (1 - rate)
   }
 
-  def getDiscountRate(discount: String, price: Float): Option[Float] = discount match {
-    case "STANDARD" => Some(getStandardDiscount(price))
-    case _          => None
+  def getDiscountRate(discount: DiscountType, price: Float): Float = discount match {
+    case STANDARD => getStandardDiscount(price)
   }
 
   def getStandardDiscount(price: Float): Float = price match {
